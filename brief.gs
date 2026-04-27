@@ -120,15 +120,21 @@ function synthesize(items) {
   }).join('\n\n');
 
   const prompt =
-    'You are the editor of a daily AI + EdTech briefing for an education professional at Stanford.\n\n' +
+    'You are the editor of a daily AI + EdTech briefing for an education professional at Stanford. The reader works in higher education and wants to stay current on AI developments, edtech, and the market forces shaping both.\n\n' +
     'Below are articles pulled in the last ' + HOURS_LOOKBACK + ' hours from RSS feeds. ' +
-    'Use Google Search to (a) verify/expand context on these stories, and (b) find any other major AI or edtech news from the last 24 hours that is NOT in this list — recent product launches, policy news, major funding rounds, research breakthroughs, university announcements, etc.\n\n' +
-    'Then write a clean HTML email digest:\n\n' +
-    '1. Open with a 2-sentence "top of the brief" — what was the most important thing in AI + edtech today?\n' +
-    '2. Group the rest into 3-5 themed sections (e.g., "AI in Higher Ed", "K-12 Classrooms", "Policy & Funding", "Industry Moves", "Research").\n' +
-    '3. Under each story: a 1-2 sentence plain-language takeaway, then a link.\n' +
-    '4. Drop anything that is not actually about AI or education. Skip duplicates. Prefer freshness and significance over volume.\n' +
-    '5. Tone: smart, dry, concise. No hype, no emojis, no marketing language.\n\n' +
+    'Use Google Search to (a) verify and expand context on these stories, (b) find any major AI or edtech news from the last 24 hours not in the list, and (c) specifically check for new blog posts, research papers, product announcements, or model releases from the top AI labs and their education-focused arms — including Anthropic, OpenAI, Google DeepMind, Google Research, Meta AI, Microsoft Research, ChatGPT for Education, Gemini for Education, Claude for Education / Anthropic for Education, Mistral, xAI, and Cohere. Surface lab announcements even when they are not major headline news — the reader cares about primary-source updates from these orgs (e.g., a ChatGPT for Education blog post about agentic workflows in higher ed).\n\n' +
+    'Then write a clean HTML email digest with these sections in order:\n\n' +
+    '1. Top of the brief (2-3 sentences): the single most important thing in AI + edtech today.\n' +
+    '2. From the Top Labs: any publications, blog posts, papers, products, or model releases from the AI labs listed above. Link to the original lab post or paper when possible — not just a journalist\'s coverage. If nothing new shipped from the labs, say so in one line and move on.\n' +
+    '3. Market Forces: funding rounds, valuations, M&A, partnerships, IPOs, layoffs, regulatory action, and other industry / economic news affecting AI or edtech.\n' +
+    '4. AI in Education: K-12, higher ed, university adoption, faculty perspectives, student impact, classroom tooling.\n' +
+    '5. Other AI / EdTech of Note: anything else significant — policy, research breakthroughs, notable opinion pieces.\n\n' +
+    'Rules:\n' +
+    '- Target a ~5-minute read (roughly 800-1200 words total). Cut, do not pad.\n' +
+    '- Each story: a 1-2 sentence plain-language takeaway, then the link.\n' +
+    '- Drop anything that is not actually about AI or education. Skip duplicates and press-release filler.\n' +
+    '- Prefer freshness, significance, and primary sources over secondhand coverage.\n' +
+    '- Tone: smart, dry, concise. No hype, no emojis, no marketing language.\n\n' +
     'Output a valid HTML email body — use <h2>, <h3>, <p>, <a href="">. Do NOT include <html>, <head>, or <body> tags. Do NOT wrap output in markdown code fences.\n\n' +
     'RSS articles to start from:\n' + articleList;
 

@@ -137,9 +137,12 @@ function stripHtml(s) {
 
 function synthesize(items) {
   const tz = Session.getScriptTimeZone();
-  const todayLong = Utilities.formatDate(new Date(), tz, 'MMMM d, yyyy');
-  const dayOfWeek = Utilities.formatDate(new Date(), tz, 'EEEE');
+  const now = new Date();
+  const todayLong = Utilities.formatDate(now, tz, 'MMMM d, yyyy');
+  const dayOfWeek = Utilities.formatDate(now, tz, 'EEEE');
   const edition = (dayOfWeek === 'Saturday' || dayOfWeek === 'Sunday') ? 'Weekend edition' : 'Weekday edition';
+  const recentCutoffStr = Utilities.formatDate(new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000), tz, 'MMMM d, yyyy');
+  const hardCutoffStr = Utilities.formatDate(new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000), tz, 'MMMM d, yyyy');
 
   const topicsList = TOPICS.map(function (t, i) {
     return (i + 1) + '. ' + t;
@@ -176,6 +179,14 @@ function synthesize(items) {
     '3. NAME THE TENSION OR SIGNAL. Don\'t just describe; identify what makes this newsworthy beyond the press-release angle. What does this say about the industry? What\'s the second-order effect?\n' +
     '4. CITE PRIMARY SOURCES. The first link in the Sources line should be the company\'s own blog/paper/press release whenever possible. Then secondary outlets for context.\n\n' +
 
+    '=== FRESHNESS — strict ===\n\n' +
+    'This is a DAILY brief. The reader will get one tomorrow too. Stale stories make it useless.\n\n' +
+    '- HARD RULE: do not include any story whose news event is older than ' + hardCutoffStr + ' (14 days). If a search result returns an older press release or blog post, drop it — even if it\'s topical.\n' +
+    '- STRONG PREFERENCE: lead with stories from ' + recentCutoffStr + ' or later (the last 3 days). Most items in the brief should be from this window.\n' +
+    '- The "(MMM D)" date you put on each item must be the date of the actual news event (announcement, publication, funding close, etc.) — NOT today\'s date and NOT the date a journalist later wrote about it.\n' +
+    '- When you find a story, verify the original publication date via web search before including it. If a story is being recapped or referenced today but the actual event is months old, drop it.\n' +
+    '- If you genuinely cannot find enough fresh news to fill a section, that is FINE — write a one-line note saying it was a quiet day for that topic and move on. A short brief with fresh news is far better than a long brief with stale news.\n' +
+    '- Avoid repeating yesterday\'s lead. If a story was likely the dominant headline a day or two ago, only include it today if there are genuinely new developments — and lead with the new angle, not the original news.\n\n' +
     '=== CURATION DISCIPLINE ===\n\n' +
     'Be ruthless. Most stories should NOT make the brief. Drop:\n' +
     '- Any story that fails the "so what for higher ed?" test\n' +
@@ -183,9 +194,8 @@ function synthesize(items) {
     '- Listicles, opinion fluff, "5 ways AI will change..." pieces\n' +
     '- Stories where the only specifics are vague claims\n' +
     '- Duplicates (pick the best version, not all of them)\n' +
-    '- Items older than 48 hours unless materially still developing\n' +
     '- Anything that\'s really about a different topic with AI shoehorned in\n\n' +
-    'A short, sharp brief beats a long, padded one. If a section has no real news today, write one line saying so and move on. Do not invent items.\n\n' +
+    'Aim for 4-7 items TOTAL across all sections. Not per section — total. A short, sharp brief beats a long, padded one. If a section has no real news today, write one line saying so and move on. Do not invent items.\n\n' +
 
     '=== OUTPUT FORMAT — match exactly ===\n\n' +
     'Start with a serif masthead block:\n\n' +
@@ -212,12 +222,13 @@ function synthesize(items) {
     '<p style="color:#666;font-style:italic;font-size:13px;margin:24px 0 0 0;border-top:1px solid #ddd;padding-top:12px;">Quiet this window: Anthropic, Google for Education, xAI, Meta AI, Mistral, MagicSchool, Chegg, Speak.</p>\n\n' +
 
     '=== Rules ===\n' +
-    '- Target a ~5-minute read (roughly 800-1200 words total). Cut, do not pad.\n' +
-    '- Every item: 2-4 substantive sentences. Lead with news + specifics, then "Why it matters:" + implication. No fluff.\n' +
+    '- Target a ~2-3 minute read (roughly 400-600 words total). Cut hard, do not pad.\n' +
+    '- 4-7 items TOTAL across all sections. Quality over quantity.\n' +
+    '- Every item: 2-3 tight sentences. Lead with the news + the most important specific (date / dollar amount / product / partner), then "Why it matters:" + implication. Drop the rest.\n' +
     '- Number items within each section starting from 1.\n' +
-    '- Date every item: (MMM D) format like (Apr 22).\n' +
+    '- Date every item with the date of the actual news event: (MMM D) format like (Apr 22).\n' +
     '- Use <a href="URL">Outlet Name</a> for all links. NEVER bare URLs.\n' +
-    '- Drop anything not actually about AI or education. Skip duplicates and press-release filler.\n' +
+    '- Drop anything not actually about AI or education. Skip duplicates and press-release filler. Skip anything older than 14 days.\n' +
     '- Tone: smart, dry, concise. No hype, no emojis, no marketing language. Write like Stratechery, not Morning Brew.\n' +
     '- Output a valid HTML email body. Do NOT include <html>, <head>, or <body> tags. Do NOT wrap output in markdown code fences.\n\n' +
 

@@ -119,23 +119,47 @@ function synthesize(items) {
            '\n   ' + a.summary;
   }).join('\n\n');
 
+  const tz = Session.getScriptTimeZone();
+  const todayLong = Utilities.formatDate(new Date(), tz, 'MMMM d, yyyy');
+  const dayOfWeek = Utilities.formatDate(new Date(), tz, 'EEEE');
+  const edition = (dayOfWeek === 'Saturday' || dayOfWeek === 'Sunday') ? 'Weekend edition' : 'Weekday edition';
+
   const prompt =
-    'You are the editor of a daily AI + EdTech briefing for an education professional at Stanford. The reader works in higher education and wants to stay current on AI developments, edtech, and the market forces shaping both.\n\n' +
+    'You are the editor of a daily AI × Education briefing for an education professional at Stanford. Today is ' + todayLong + ' (' + dayOfWeek + '). The reader works in higher education and wants to stay current on AI developments, edtech, and the market forces shaping both.\n\n' +
     'Below are articles pulled in the last ' + HOURS_LOOKBACK + ' hours from RSS feeds. ' +
-    'Use Google Search to (a) verify and expand context on these stories, (b) find any major AI or edtech news from the last 24 hours not in the list, and (c) specifically check for new blog posts, research papers, product announcements, or model releases from the top AI labs and their education-focused arms — including Anthropic, OpenAI, Google DeepMind, Google Research, Meta AI, Microsoft Research, ChatGPT for Education, Gemini for Education, Claude for Education / Anthropic for Education, Mistral, xAI, and Cohere. Surface lab announcements even when they are not major headline news — the reader cares about primary-source updates from these orgs (e.g., a ChatGPT for Education blog post about agentic workflows in higher ed).\n\n' +
-    'Then write a clean HTML email digest with these sections in order:\n\n' +
-    '1. Top of the brief (2-3 sentences): the single most important thing in AI + edtech today.\n' +
-    '2. From the Top Labs: any publications, blog posts, papers, products, or model releases from the AI labs listed above. Link to the original lab post or paper when possible — not just a journalist\'s coverage. If nothing new shipped from the labs, say so in one line and move on.\n' +
-    '3. Market Forces: funding rounds, valuations, M&A, partnerships, IPOs, layoffs, regulatory action, and other industry / economic news affecting AI or edtech.\n' +
-    '4. AI in Education: K-12, higher ed, university adoption, faculty perspectives, student impact, classroom tooling.\n' +
-    '5. Other AI / EdTech of Note: anything else significant — policy, research breakthroughs, notable opinion pieces.\n\n' +
-    'Rules:\n' +
+    'Use Google Search to (a) verify and expand context on these stories, (b) find any major AI or edtech news from the last 24 hours not in the list, and (c) specifically check for new blog posts, research papers, product announcements, or model releases from major AI labs and edtech companies — Anthropic, OpenAI, Google DeepMind, Google Research, Google for Education, Meta AI, Microsoft Research, ChatGPT for Education, Gemini for Education, Claude for Education, Mistral, xAI, Cohere, Khan Academy, Duolingo, Coursera, Chegg, MagicSchool, Speak. Surface these primary-source updates even when they are not headline news.\n\n' +
+    '=== OUTPUT FORMAT — match exactly ===\n\n' +
+    'Start with a serif masthead block:\n\n' +
+    '<h1 style="font-family:Georgia,serif;font-size:28px;margin:0 0 4px 0;">AI &times; Education Brief</h1>\n' +
+    '<p style="color:#666;font-size:13px;margin:0 0 8px 0;">' + todayLong + ' &nbsp;&middot;&nbsp; ' + edition + '</p>\n' +
+    '<hr style="border:none;border-top:1px solid #333;margin:0 0 20px 0;">\n\n' +
+    'Then for each section, use a small-caps section header:\n\n' +
+    '<h3 style="font-size:12px;letter-spacing:0.1em;color:#666;text-transform:uppercase;margin:24px 0 12px 0;border-bottom:1px solid #ddd;padding-bottom:6px;">From the Companies</h3>\n\n' +
+    'Then numbered items in this exact pattern:\n\n' +
+    '<p style="margin:0 0 6px 0;"><strong>1. OpenAI Opens Codex-Powered Workspace Agents to All ChatGPT Edu &amp; Teachers Plans</strong> <span style="color:#888;font-weight:normal;">(Apr 22)</span></p>\n' +
+    '<p style="margin:0 0 6px 0;">OpenAI extended its new Workspace Agents feature to every ChatGPT Edu and Teachers subscriber last Tuesday. Powered by Codex, the agents execute multi-step workflows in natural language: auto-drafting family updates from class notes, routing student advising queries, summarizing grant calls, and connecting to Canva, Google Drive, and Microsoft 365. The research preview is free through May 5; credit-based pricing begins May 6. OpenAI is running a live educator Build Hour on <strong>April 28</strong>. <em>Why it matters:</em> This is OpenAI\'s clearest move yet to embed agentic infrastructure directly into school and district workflows — teams hiring for edu go-to-market or curriculum integration roles should expect this to accelerate adoption conversations.</p>\n' +
+    '<p style="margin:0 0 20px 0;color:#666;font-size:13px;">Sources: <a href="URL">OpenAI blog</a> &middot; <a href="URL">EdTech Innovation Hub</a> &middot; <a href="URL">9to5Mac</a></p>\n\n' +
+    'Notice the pattern:\n' +
+    '- Bold sentence-case headline that names the company naturally (NOT all-caps prefix). Number it.\n' +
+    '- Short date in gray parens at end of headline: (Apr 22) — abbreviated month, no year.\n' +
+    '- Body paragraph: lead with the news + concrete specifics (dates, prices, integrations), then "Why it matters:" in italics introducing the implication for an education professional.\n' +
+    '- Sources line: smaller, gray, primary source listed FIRST (the company\'s own blog/paper), then secondary outlets, separated by middle dots (&middot;). Always anchor text, never bare URLs.\n\n' +
+    'Section order (use these exact section headers in this order):\n\n' +
+    '1. From the Companies — publications, blog posts, papers, products, model releases, partnerships from any org listed above. Lead with primary sources. If a major company had nothing in the window, do not invent something — name it in the Quiet line at the end.\n' +
+    '2. Market Forces — funding rounds, valuations, M&A, IPOs, layoffs, regulatory/antitrust action, policy.\n' +
+    '3. AI in Education — K-12, higher ed, university adoption, faculty perspectives, student impact, classroom tooling, equity research.\n' +
+    '4. Other AI of Note — anything else significant: research breakthroughs, notable opinion pieces, infrastructure shifts.\n\n' +
+    'End with a Quiet line — italic, gray, listing orgs that had nothing worth flagging:\n\n' +
+    '<p style="color:#666;font-style:italic;font-size:13px;margin:24px 0 0 0;border-top:1px solid #ddd;padding-top:12px;">Quiet this window: Anthropic, Google for Education, xAI, Meta AI, Mistral, MagicSchool, Chegg, Speak.</p>\n\n' +
+    '=== Rules ===\n' +
     '- Target a ~5-minute read (roughly 800-1200 words total). Cut, do not pad.\n' +
-    '- Each story: a 1-2 sentence plain-language takeaway, then the link.\n' +
-    '- Drop anything that is not actually about AI or education. Skip duplicates and press-release filler.\n' +
-    '- Prefer freshness, significance, and primary sources over secondhand coverage.\n' +
-    '- Tone: smart, dry, concise. No hype, no emojis, no marketing language.\n\n' +
-    'Output a valid HTML email body — use <h2>, <h3>, <p>, <a href="">. Do NOT include <html>, <head>, or <body> tags. Do NOT wrap output in markdown code fences.\n\n' +
+    '- Every item: 2-4 substantive sentences. Lead with news + specifics, then "Why it matters:" + implication. No fluff.\n' +
+    '- Number items within each section starting from 1.\n' +
+    '- Date every item: (MMM D) format like (Apr 22).\n' +
+    '- Use <a href="URL">Outlet Name</a> for all links. NEVER bare URLs.\n' +
+    '- Drop anything not actually about AI or education. Skip duplicates and press-release filler.\n' +
+    '- Tone: smart, dry, concise. No hype, no emojis, no marketing language. Write like Stratechery, not Morning Brew.\n' +
+    '- Output a valid HTML email body. Do NOT include <html>, <head>, or <body> tags. Do NOT wrap output in markdown code fences.\n\n' +
     'RSS articles to start from:\n' + articleList;
 
   const url = 'https://generativelanguage.googleapis.com/v1beta/models/' +
@@ -170,16 +194,16 @@ function synthesize(items) {
 
 function sendEmail(htmlBody, count) {
   const tz = Session.getScriptTimeZone();
-  const today = Utilities.formatDate(new Date(), tz, 'EEEE, MMMM d');
-  const subject = 'AI + EdTech Brief — ' + today;
+  const today = Utilities.formatDate(new Date(), tz, 'MMM d');
+  const subject = 'AI × Education Brief — ' + today;
   const footer =
-    '<hr><p style="color:#888;font-size:12px">' +
-    'Generated from ' + count + ' articles across ' + FEEDS.length + ' sources. ' +
-    'Edit feeds, prompt, or tone in your Apps Script project.' +
+    '<p style="color:#aaa;font-size:11px;margin-top:24px;">' +
+    'Generated from ' + count + ' articles across ' + FEEDS.length + ' sources, ' +
+    'with live Google Search for additional coverage.' +
     '</p>';
 
   GmailApp.sendEmail(RECIPIENT, subject, '', {
     htmlBody: htmlBody + footer,
-    name: 'Daily Brief',
+    name: 'AI × Education Brief',
   });
 }

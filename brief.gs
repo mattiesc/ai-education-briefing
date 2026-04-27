@@ -25,7 +25,7 @@ const FEEDS = [
 
 const MAX_ITEMS_PER_FEED = 8;
 const HOURS_LOOKBACK = 36;
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_MODEL = 'gemini-2.5-pro';  // Pro is meaningfully better for analytical writing; free tier covers 1/day easily
 const USE_GOOGLE_SEARCH = true;  // let Gemini search the web for additional/fresher stories
 // === end config ===
 
@@ -126,8 +126,32 @@ function synthesize(items) {
 
   const prompt =
     'You are the editor of a daily AI × Education briefing for an education professional at Stanford. Today is ' + todayLong + ' (' + dayOfWeek + '). The reader works in higher education and wants to stay current on AI developments, edtech, and the market forces shaping both.\n\n' +
-    'Below are articles pulled in the last ' + HOURS_LOOKBACK + ' hours from RSS feeds. ' +
-    'Use Google Search to (a) verify and expand context on these stories, (b) find any major AI or edtech news from the last 24 hours not in the list, and (c) specifically check for new blog posts, research papers, product announcements, or model releases from major AI labs and edtech companies — Anthropic, OpenAI, Google DeepMind, Google Research, Google for Education, Meta AI, Microsoft Research, ChatGPT for Education, Gemini for Education, Claude for Education, Mistral, xAI, Cohere, Khan Academy, Duolingo, Coursera, Chegg, MagicSchool, Speak. Surface these primary-source updates even when they are not headline news.\n\n' +
+    'Below are articles pulled in the last ' + HOURS_LOOKBACK + ' hours from RSS feeds. Treat them as a STARTING POINT, not the brief itself. The RSS snippet is just a pointer — when a story is worth including, use Google Search to read the actual article and underlying primary source so your write-up reflects what the story actually says, not what the RSS blurb says.\n\n' +
+    'Use Google Search to:\n' +
+    '(a) read the full text of stories you decide to include (do not paraphrase the RSS snippet),\n' +
+    '(b) find major AI or edtech news from the last 24-48 hours not in the RSS list,\n' +
+    '(c) specifically check for new blog posts, papers, product announcements, or model releases from major AI labs and edtech companies — Anthropic, OpenAI, Google DeepMind, Google Research, Google for Education, Meta AI, Microsoft Research, ChatGPT for Education, Gemini for Education, Claude for Education, Mistral, xAI, Cohere, Khan Academy, Duolingo, Coursera, Chegg, MagicSchool, Speak.\n\n' +
+    '=== EDITORIAL STANDARDS — this is what makes the brief good ===\n\n' +
+    'You are not summarizing the news. You are CURATING and INTERPRETING it for one specific reader: an education professional at Stanford who works in higher ed and is making real decisions about partnerships, hiring, vendor evaluation, faculty conversations, curriculum integration, and policy. Every item must earn its spot.\n\n' +
+    'For each story you choose to include:\n\n' +
+    '1. LEAD WITH THE NEWS. Open with what actually happened, with concrete specifics — names, dollar amounts, dates, products, partners, integrations. No setup paragraphs. No "AI is transforming education" framing.\n' +
+    '2. DELIVER REAL ANALYSIS in "Why it matters". This is the most important sentence in the item. It must be SPECIFIC to higher ed work — connect the news to a concrete decision, signal, or shift the reader can act on.\n' +
+    '   - GOOD: "For education recruiting: Anthropic\'s edu platform now has dramatically expanded runway — expect dedicated education go-to-market and partnership headcount to be in high demand."\n' +
+    '   - GOOD: "The Codex integration uses district SSO, which removes a common procurement blocker — faculty piloting agentic tools should pressure-test their IT teams\' readiness."\n' +
+    '   - GOOD: "Bain (not just Sequoia) led the round, signaling enterprise edtech is becoming venture-grade — small startups in the space are about to face a much harder fundraise."\n' +
+    '   - BAD: "This is an exciting development in AI." / "This is important for educators." / "Stay tuned as this story evolves." / "This shows how AI continues to transform learning." (NEVER write these — they are vacuous filler.)\n' +
+    '3. NAME THE TENSION OR SIGNAL. Don\'t just describe; identify what makes this newsworthy beyond the press-release angle. What does this say about the industry? What\'s the second-order effect?\n' +
+    '4. CITE PRIMARY SOURCES. The first link in the Sources line should be the company\'s own blog/paper/press release whenever possible. Then secondary outlets for context.\n\n' +
+    '=== CURATION DISCIPLINE ===\n\n' +
+    'Be ruthless. The RSS feeds will hand you ~50+ items. Most should NOT make the brief. Drop:\n' +
+    '- Any story that fails the "so what for higher ed?" test\n' +
+    '- Press-release rewrites with no actual news\n' +
+    '- Listicles, opinion fluff, "5 ways AI will change..." pieces\n' +
+    '- Stories where the only specifics are vague claims\n' +
+    '- Duplicates (pick the best version, not all of them)\n' +
+    '- Items older than 48 hours unless materially still developing\n' +
+    '- Anything that\'s really about a different topic with AI shoehorned in\n\n' +
+    'A short, sharp brief beats a long, padded one. If a section has no real news today, write one line saying so and move on. Do not invent items.\n\n' +
     '=== OUTPUT FORMAT — match exactly ===\n\n' +
     'Start with a serif masthead block:\n\n' +
     '<h1 style="font-family:Georgia,serif;font-size:28px;margin:0 0 4px 0;">AI &times; Education Brief</h1>\n' +

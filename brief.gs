@@ -16,13 +16,17 @@ const FEEDS = [
   { name: 'EdSurge',          url: 'https://www.edsurge.com/articles_rss' },
   { name: 'Hechinger Report', url: 'https://hechingerreport.org/feed/' },
   { name: 'Inside Higher Ed', url: 'https://www.insidehighered.com/news/tech-innovation/feed' },
+  { name: 'Education Week',   url: 'https://www.edweek.org/feed' },
+  { name: 'The 74 Million',   url: 'https://www.the74million.org/feed/' },
   { name: 'VentureBeat AI',   url: 'https://venturebeat.com/category/ai/feed/' },
   { name: 'MIT Tech Review',  url: 'https://www.technologyreview.com/topic/artificial-intelligence/feed' },
+  { name: 'TechCrunch AI',    url: 'https://techcrunch.com/category/artificial-intelligence/feed/' },
 ];
 
 const MAX_ITEMS_PER_FEED = 8;
 const HOURS_LOOKBACK = 36;
 const GEMINI_MODEL = 'gemini-2.5-flash';
+const USE_GOOGLE_SEARCH = true;  // let Gemini search the web for additional/fresher stories
 // === end config ===
 
 
@@ -117,22 +121,29 @@ function synthesize(items) {
 
   const prompt =
     'You are the editor of a daily AI + EdTech briefing for an education professional at Stanford.\n\n' +
-    'Below are articles pulled in the last ' + HOURS_LOOKBACK + ' hours from edtech and AI news sources. Write a clean HTML email digest:\n\n' +
+    'Below are articles pulled in the last ' + HOURS_LOOKBACK + ' hours from RSS feeds. ' +
+    'Use Google Search to (a) verify/expand context on these stories, and (b) find any other major AI or edtech news from the last 24 hours that is NOT in this list — recent product launches, policy news, major funding rounds, research breakthroughs, university announcements, etc.\n\n' +
+    'Then write a clean HTML email digest:\n\n' +
     '1. Open with a 2-sentence "top of the brief" — what was the most important thing in AI + edtech today?\n' +
-    '2. Group the rest into 3-5 themed sections (e.g., "AI in Higher Ed", "K-12 Classrooms", "Policy & Funding", "Industry Moves").\n' +
-    '3. Under each story: a 1-2 sentence plain-language takeaway, then the link.\n' +
-    '4. Drop anything that is not actually about AI or education. Skip duplicates.\n' +
+    '2. Group the rest into 3-5 themed sections (e.g., "AI in Higher Ed", "K-12 Classrooms", "Policy & Funding", "Industry Moves", "Research").\n' +
+    '3. Under each story: a 1-2 sentence plain-language takeaway, then a link.\n' +
+    '4. Drop anything that is not actually about AI or education. Skip duplicates. Prefer freshness and significance over volume.\n' +
     '5. Tone: smart, dry, concise. No hype, no emojis, no marketing language.\n\n' +
-    'Output a valid HTML email body — use <h2>, <h3>, <p>, <a href="">. Do NOT include <html>, <head>, or <body> tags.\n\n' +
-    'Articles:\n' + articleList;
+    'Output a valid HTML email body — use <h2>, <h3>, <p>, <a href="">. Do NOT include <html>, <head>, or <body> tags. Do NOT wrap output in markdown code fences.\n\n' +
+    'RSS articles to start from:\n' + articleList;
 
   const url = 'https://generativelanguage.googleapis.com/v1beta/models/' +
               GEMINI_MODEL + ':generateContent?key=' + GEMINI_API_KEY;
 
+  const payload = { contents: [{ parts: [{ text: prompt }] }] };
+  if (USE_GOOGLE_SEARCH) {
+    payload.tools = [{ google_search: {} }];
+  }
+
   const response = UrlFetchApp.fetch(url, {
     method: 'post',
     contentType: 'application/json',
-    payload: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+    payload: JSON.stringify(payload),
     muteHttpExceptions: true,
   });
 
@@ -141,7 +152,13 @@ function synthesize(items) {
   }
 
   const data = JSON.parse(response.getContentText());
-  return data.candidates[0].content.parts[0].text;
+  const parts = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
+  let text = parts.map(function (p) { return p.text || ''; }).join('');
+  text = text.replace(/^\s*```html\s*/i, '')
+             .replace(/^\s*```\s*/i, '')
+             .replace(/```\s*$/i, '')
+             .trim();
+  return text;
 }
 
 

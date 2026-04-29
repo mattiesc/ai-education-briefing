@@ -222,6 +222,7 @@ function synthesize(items) {
     '<p style="color:#666;font-style:italic;font-size:13px;margin:24px 0 0 0;border-top:1px solid #ddd;padding-top:12px;">Quiet this window: Anthropic, Google for Education, xAI, Meta AI, Mistral, MagicSchool, Chegg, Speak.</p>\n\n' +
 
     '=== Rules ===\n' +
+    '- ABSOLUTE RULE: Your response must START with the literal text "<h1". Do NOT include any planning, reasoning, verification notes, "let me check the dates," date-by-date evaluations, or commentary before the HTML. The reader sees your response directly as their email body — anything before the <h1> tag is a leak. Do all reasoning silently; output only the final HTML.\n' +
     '- Target a ~2-3 minute read (roughly 400-600 words total). Cut hard, do not pad.\n' +
     '- 4-7 items TOTAL across all sections. Quality over quantity.\n' +
     '- Every item: 2-3 tight sentences. Lead with the news + the most important specific (date / dollar amount / product / partner), then "Why it matters:" + implication. Drop the rest.\n' +
@@ -273,6 +274,14 @@ function synthesize(items) {
              .replace(/^\s*```\s*/i, '')
              .replace(/```\s*$/i, '')
              .trim();
+
+  // Safety net: strip any reasoning/preamble before the first <h1 tag.
+  // Claude sometimes includes "let me verify dates" notes before the brief.
+  const h1Match = text.search(/<h1[\s>]/i);
+  if (h1Match > 0) {
+    console.log('Stripped ' + h1Match + ' chars of preamble before <h1>');
+    text = text.slice(h1Match);
+  }
 
   if (!text) {
     return '<p>Claude returned no text content. Raw response: ' + JSON.stringify(data).slice(0, 500) + '</p>';

@@ -62,6 +62,52 @@ function dailyBrief() {
   console.log('Fetched ' + items.length + ' articles from ' + FEEDS.length + ' feeds');
   const brief = synthesize(items);
   sendEmail(brief, items.length);
+  rememberSentItems(brief);
+}
+
+
+// Memory of items already sent in recent briefs, so we don't repeat them.
+// Stored in Apps Script's PropertiesService (a tiny built-in key-value store).
+const MEMORY_DAYS = 7;
+const MEMORY_KEY = 'recent_brief_items';
+
+function loadRecentMemory() {
+  const stored = PropertiesService.getScriptProperties().getProperty(MEMORY_KEY);
+  if (!stored) return [];
+  try {
+    const all = JSON.parse(stored);
+    const cutoff = Date.now() - MEMORY_DAYS * 24 * 60 * 60 * 1000;
+    return all.filter(function (m) { return m.ts >= cutoff; });
+  } catch (e) {
+    console.warn('Could not parse memory: ' + e.message);
+    return [];
+  }
+}
+
+function rememberSentItems(htmlBrief) {
+  const headlines = extractItemHeadlines(htmlBrief);
+  if (headlines.length === 0) {
+    console.log('No item headlines extracted — skipping memory update');
+    return;
+  }
+  const memory = loadRecentMemory();
+  const ts = Date.now();
+  for (const h of headlines) {
+    memory.push({ ts: ts, headline: h });
+  }
+  PropertiesService.getScriptProperties().setProperty(MEMORY_KEY, JSON.stringify(memory));
+  console.log('Remembered ' + headlines.length + ' items; ' + memory.length + ' total in ' + MEMORY_DAYS + '-day window');
+}
+
+function extractItemHeadlines(html) {
+  // Numbered item headlines look like: <strong>1. OpenAI Opens Codex...</strong>
+  const re = /<strong>\s*\d+\.\s*([^<]+?)\s*<\/strong>/g;
+  const headlines = [];
+  let match;
+  while ((match = re.exec(html)) !== null) {
+    headlines.push(match[1].trim());
+  }
+  return headlines;
 }
 
 
@@ -148,6 +194,14 @@ function synthesize(items) {
     return (i + 1) + '. ' + t;
   }).join('\n');
 
+  const memory = loadRecentMemory();
+  const alreadyCovered = memory.length === 0
+    ? '(Nothing — this is the first brief, or memory was cleared.)'
+    : memory.map(function (m) {
+        const days = Math.round((Date.now() - m.ts) / (24 * 60 * 60 * 1000));
+        return '- ' + m.headline + ' (' + (days === 0 ? 'today' : days + 'd ago') + ')';
+      }).join('\n');
+
   const articleList = items.length === 0
     ? '(RSS feeds returned nothing this morning — work entirely from web search.)'
     : items.map(function (a, i) {
@@ -160,6 +214,11 @@ function synthesize(items) {
     'You are the editor of a daily AI × Education briefing for an education professional at Stanford. Today is ' + todayLong + ' (' + dayOfWeek + '). The reader works in higher education and is making real decisions about partnerships, hiring, vendor evaluation, faculty conversations, curriculum integration, and policy.\n\n' +
 
     '=== TOPICS THE READER CARES ABOUT ===\n\n' + topicsList + '\n\n' +
+
+    '=== ALREADY COVERED — do not repeat ===\n\n' +
+    'The reader has ALREADY received briefs covering these stories in the last ' + MEMORY_DAYS + ' days. Do NOT include them again — they are dead to this brief — UNLESS there is a SPECIFIC, NAMEABLE new development since they were last covered (a new country joining, a new dollar amount, a course correction, a major user milestone, regulatory action, etc.). If you do reuse a story for a new development, lead with the NEW angle, not the original news, and make the new specific clear in the headline.\n\n' +
+    'When in doubt, drop it and find something else. The reader is annoyed by repeats.\n\n' +
+    'Already covered:\n' + alreadyCovered + '\n\n' +
 
     '=== HOW TO RESEARCH ===\n\n' +
     'Use the web_search tool aggressively. Run multiple searches across different topics — do not rely on a single query. Search for primary sources first (lab blogs, company press releases, university announcements, research papers), then secondary outlets for context.\n\n' +
